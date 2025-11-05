@@ -1,14 +1,15 @@
 #!/bin/bash
 set -e
 
-IPADDR=$(curl ifconfig.me && echo "")
-NODENAME=$(hostname -A | awk '{print $1}')
+IPADDR=$(curl -s ifconfig.me)
+NODENAME=$(hostname -s)
 POD_CIDR="192.168.0.0/16"
 
-kubeadm init --control-plane-endpoint=$IPADDR  --apiserver-cert-extra-sans=$IPADDR  --pod-network-cidr=$POD_CIDR --node-name $NODENAME --ignore-preflight-errors Swap
+kubeadm init --control-plane-endpoint=$IPADDR  --apiserver-cert-extra-sans=$IPADDR  --pod-network-cidr=$POD_CIDR --node-name $NODENAME
 
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
- 
- 
+
+kubeadm token create --print-join-command > /root/kubeadm-join-command.sh
+chmod +x /root/kubeadm-join-command.sh

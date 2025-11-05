@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+echo "Disabling swap..."
+swapoff -a
+(crontab -l 2>/dev/null; echo "@reboot /sbin/swapoff -a") | crontab - || true
+
+echo "Configuring kernel modules..."
 cat <<EOF | tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
@@ -18,3 +23,5 @@ EOF
 
 # Apply sysctl params without reboot
 sysctl --system
+
+echo "Network configuration completed successfully!"
