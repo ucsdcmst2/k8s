@@ -1,15 +1,11 @@
 #!/bin/bash
 set -e
-
 KUBERNETES_VERSION=1.32
-
 mkdir -p /etc/apt/keyrings
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v${KUBERNETES_VERSION}/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v${KUBERNETES_VERSION}/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
-
 apt update -y
 apt install -y kubelet=${KUBERNETES_VERSION}.0-* kubectl=${KUBERNETES_VERSION}.0-* kubeadm=${KUBERNETES_VERSION}.0-*
-
 apt-mark hold kubelet kubeadm kubectl
 
 # Detect primary network interface
@@ -27,8 +23,10 @@ cat > /etc/default/kubelet << EOF
 KUBELET_EXTRA_ARGS=--node-ip=$node_ip
 EOF
 
+systemctl daemon-reload
 systemctl enable kubelet
 
 echo "Kubernetes components installed successfully!"
 echo "Primary interface: $PRIMARY_INTERFACE"
-echo "Node IP: $local_ip"
+echo "Node IP (v4): $local_ip"
+echo "Node IP (v6): ${local_ipv6:-not detected}"
