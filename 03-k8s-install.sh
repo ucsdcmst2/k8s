@@ -15,8 +15,16 @@ apt-mark hold kubelet kubeadm kubectl
 # Detect primary network interface
 PRIMARY_INTERFACE=$(ip route | grep default | awk '{print $5}' | head -n1)
 local_ip="$(ip --json addr show $PRIMARY_INTERFACE | jq -r '.[0].addr_info[] | select(.family == "inet") | .local')"
+local_ipv6="$(ip --json addr show $PRIMARY_INTERFACE | jq -r '.[0].addr_info[] | select(.family == "inet6" and .scope == "global" and (.local | startswith("fe80") | not)) | .local' | head -n1)"
+
+if [ -n "$local_ipv6" ]; then
+  node_ip="$local_ip,$local_ipv6"
+else
+  node_ip="$local_ip"
+fi
+
 cat > /etc/default/kubelet << EOF
-KUBELET_EXTRA_ARGS=--node-ip=$local_ip
+KUBELET_EXTRA_ARGS=--node-ip=$node_ip
 EOF
 
 systemctl enable kubelet
